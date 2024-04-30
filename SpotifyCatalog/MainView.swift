@@ -9,7 +9,7 @@ import SwiftUI
 
 struct MainView: View {
     
-    @State private var searchString: String = "Summer"
+    @State private var searchString: String = ""
     @State private var showSearchSettings: Bool = false
     @State private var selectedMarket: String = "US"
     @State private var isSearchRunning: Bool = false
@@ -18,26 +18,17 @@ struct MainView: View {
     @State private var albumData: [Album]?
     @State private var trackData: [Track]?
     
-    @State private var knownTypes: [AudioType] = [
+    @State private var searchTypes: [AudioType] = [
         .init(name: "Album", isChecked: false),
-        .init(name: "Artist", isChecked: false),
-        .init(name: "Track", isChecked: true),
-    ]
-    
-    let adaptiveLayout = [
-        GridItem(.adaptive(minimum: 80, maximum: 120))
+        .init(name: "Artist", isChecked: true),
+        .init(name: "Track", isChecked: false),
     ]
     
     var body: some View {
-        ZStack{
-            LinearGradient(
-                stops: [Gradient.Stop(color: .pink.opacity(0.6), location: 0.6),
-                        Gradient.Stop(color: .indigo.opacity(0.7), location: 1)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-                .ignoresSafeArea()
+        ZStack {
             
+            LinearGradient(colors: [.blue.opacity(0.2), .green.opacity(0.3)], startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea()
             VStack(alignment: .leading) {
                 HStack {
                     TextField("Search", text: $searchString)
@@ -65,71 +56,132 @@ struct MainView: View {
                 }
                 .padding(.vertical, 40)
                 
-                if showSearchSettings {
-                    VStack(alignment: .leading){
-                        HStack{
-                            Text("Market")
-                            Picker("Market", selection: $selectedMarket) {
-                                ForEach(Market.knownMarkets) { market in
-                                    Text(market.country)
-                                        .tag(market.id)
-                                }
-                            }
-                            .tint(.black)
-                        }
-                        LazyVGrid(columns: adaptiveLayout) {
-                            ForEach($knownTypes) { $audioType in
-                                HStack{
-                                    Image(systemName: audioType.isChecked ? "checkmark.square" : "square")
-                                    Text(audioType.name)
-                                }
-                                .font(.caption)
-                                .onTapGesture {
-                                    audioType.isChecked.toggle()
-                                }
-                            }
-                        }
-                    }
-                    .padding()
-                    .background(.gray.opacity(0.3))
-                }
+                Spacer()
                 
-                
-                Text("Results")
-                    .font(.title)
-                    .fontWeight(.heavy)
-                List {
-                    Text("Hello World")
-                        .listRowBackground(Color.clear)
-                    
+                ScrollView{
                     if let artistData {
-                        Section("Artists"){
-                            ForEach(artistData) { artist in
-                                Text(artist.name ?? "NA")
+                        Text("Artists")
+                            .font(.largeTitle)
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 0) {
+                                ForEach(artistData) { item in
+                                    if let imageUrl = item.images?.first?.url {
+                                        VStack(spacing: 0) {
+                                            AsyncImage(url: URL(string: imageUrl), scale: 1) { phase in
+                                                if let image = phase.image {
+                                                    image
+                                                        .resizable()
+                                                        .frame(width: 300, height: 200)
+                                                        .scaledToFit()
+                                                } else if phase.error != nil {
+                                                    Image(systemName: "antenna.radiowaves.left.and.right.slash")
+                                                        .resizable()
+                                                        .frame(width: 200, height: 200)
+                                                        .scaledToFit()
+                                                } else {
+                                                    ProgressView()
+                                                }
+                                            }
+                                            Text(item.name ?? "NA")
+                                                .font(.footnote)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        .visualEffect { content, proxy in
+                                            content
+                                                .rotation3DEffect(.degrees(-proxy.frame(in: .global).minX) / 8, axis: (x: 0, y: 1, z: 0))
+                                        }
+                                    }
+                                }
                             }
+                            .scrollTargetLayout()
                         }
-                        .listRowBackground(Color.clear)
+                        .scrollTargetBehavior(.viewAligned)
                     }
                     
                     if let albumData {
-                        Section("Albums") {
-                            ForEach(albumData) { album in
-                                Text(album.name)
+                        Text("Albums")
+                            .font(.largeTitle)
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 0) {
+                                ForEach(albumData) { item in
+                                    if let imageUrl = item.images?.first?.url {
+                                        VStack(spacing: 0) {
+                                            AsyncImage(url: URL(string: imageUrl), scale: 1) { phase in
+                                                if let image = phase.image {
+                                                    image
+                                                        .resizable()
+                                                        .frame(width: 300, height: 200)
+                                                        .scaledToFit()
+                                                } else if phase.error != nil {
+                                                    Image(systemName: "antenna.radiowaves.left.and.right.slash")
+                                                        .resizable()
+                                                        .frame(width: 200, height: 200)
+                                                        .scaledToFit()
+                                                } else {
+                                                    ProgressView()
+                                                }
+                                            }
+                                            Text(item.name ?? "NA")
+                                                .font(.footnote)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        .visualEffect { content, proxy in
+                                            content
+                                                .rotation3DEffect(.degrees(-proxy.frame(in: .global).minX) / 8, axis: (x: 0, y: 1, z: 0))
+                                        }
+                                    }
+                                }
                             }
+                            .scrollTargetLayout()
                         }
-                        .listRowBackground(Color.clear)
+                        .scrollTargetBehavior(.viewAligned)
                     }
                     
                     if let trackData {
-                        Section("Tracks") {
-                            ForEach(trackData) { track in
-                                Text(track.name ?? "NA")
+                        Text("Tracks")
+                            .font(.largeTitle)
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 0) {
+                                ForEach(trackData) { item in
+                                    if let imageUrl = item.album?.images?.first?.url {
+                                        VStack(spacing: 0) {
+                                            AsyncImage(url: URL(string: imageUrl), scale: 1) { phase in
+                                                if let image = phase.image {
+                                                    image
+                                                        .resizable()
+                                                        .frame(width: 300, height: 200)
+                                                        .scaledToFit()
+                                                } else if phase.error != nil {
+                                                    Image(systemName: "antenna.radiowaves.left.and.right.slash")
+                                                        .resizable()
+                                                        .frame(width: 200, height: 200)
+                                                        .scaledToFit()
+                                                } else {
+                                                    ProgressView()
+                                                }
+                                            }
+                                            Text(item.name ?? "NA")
+                                                .font(.footnote)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        .visualEffect { content, proxy in
+                                            content
+                                                .rotation3DEffect(.degrees(-proxy.frame(in: .global).minX) / 8, axis: (x: 0, y: 1, z: 0))
+                                        }
+                                    }
+                                }
                             }
+                            .scrollTargetLayout()
                         }
-                        .listRowBackground(Color.clear)
+                        .scrollTargetBehavior(.viewAligned)
                     }
+                    
                 }
-                .listStyle(.plain)
+            }
+            .sheet(isPresented: $showSearchSettings) {
+                SearchSettingsView(selectedMarket: $selectedMarket, searchTypes: $searchTypes)
+                    .interactiveDismissDisabled()
+                    .presentationDetents([.height(300)])
             }
             .padding()
             .overlay {
@@ -157,7 +209,7 @@ struct MainView: View {
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        let spotifySearchBody = SpotifySearchBody(query: searchString, market: selectedMarket, type: knownTypes.filter { $0.isChecked }.map { $0.spotifyType })
+        let spotifySearchBody = SpotifySearchBody(query: searchString, market: selectedMarket, type: searchTypes.filter { $0.isChecked }.map { $0.spotifyType })
         
         do {
             request.httpBody = try JSONEncoder().encode(spotifySearchBody)
