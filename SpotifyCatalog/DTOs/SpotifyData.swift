@@ -76,8 +76,8 @@ struct Album: Codable, Identifiable {
     var externalUrls: ExternalUrl
     var href: String
     var id: String
-    var images: [SpotifyImage]
-    var name: String
+    var images: [SpotifyImage]?
+    var name: String?
     var releaseDate: String
     var releaseDatePrecision: String
     var restrictions: Restriction?
