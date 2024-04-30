@@ -35,9 +35,9 @@ struct Artist: Codable, Identifiable {
     var followers: Followers?
     var genres: [String]?
     var href: String?
-    var id: String?
+    var id: String
     var images: [SpotifyImage]?
-    var name: String?
+    var name: String
     var popularity: Int?
     var type: String?
     var uri: String?
@@ -77,7 +77,7 @@ struct Album: Codable, Identifiable {
     var href: String
     var id: String
     var images: [SpotifyImage]?
-    var name: String?
+    var name: String
     var releaseDate: String
     var releaseDatePrecision: String
     var restrictions: Restriction?
@@ -128,10 +128,10 @@ struct Track: Codable, Identifiable {
     var externalIDs: ExternalID?
     var externalUrls: ExternalUrl?
     var href: String?
-    var id: String?
+    var id: String
     var isLocal: Bool?
     var isPlayable: Bool?
-    var name: String?
+    var name: String
     var popularity: Int?
     var previewUrl: String?
     var restrictions: Restriction?
