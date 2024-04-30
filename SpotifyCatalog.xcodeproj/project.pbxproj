@@ -17,6 +17,7 @@
 		528C72142BE15AAF0063C289 /* SpotifyData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 528C72132BE15AAF0063C289 /* SpotifyData.swift */; };
 		528C72162BE164040063C289 /* SpotifySearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 528C72152BE164040063C289 /* SpotifySearch.swift */; };
 		528C72182BE16B440063C289 /* MessageResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 528C72172BE16B440063C289 /* MessageResponse.swift */; };
+		528C721A2BE18B1B0063C289 /* SearchSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 528C72192BE18B1B0063C289 /* SearchSettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -31,6 +32,7 @@
 		528C72132BE15AAF0063C289 /* SpotifyData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifyData.swift; sourceTree = "<group>"; };
 		528C72152BE164040063C289 /* SpotifySearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotifySearch.swift; sourceTree = "<group>"; };
 		528C72172BE16B440063C289 /* MessageResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageResponse.swift; sourceTree = "<group>"; };
+		528C72192BE18B1B0063C289 /* SearchSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchSettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -65,6 +67,7 @@
 			children = (
 				528C71FE2BE1454F0063C289 /* SpotifyCatalogApp.swift */,
 				528C72002BE1454F0063C289 /* MainView.swift */,
+				528C72192BE18B1B0063C289 /* SearchSettingsView.swift */,
 				528C720E2BE14EB50063C289 /* DTOs */,
 				528C72022BE145500063C289 /* Assets.xcassets */,
 				528C720C2BE145B30063C289 /* Launch Screen.storyboard */,
@@ -169,6 +172,7 @@
 				528C71FF2BE1454F0063C289 /* SpotifyCatalogApp.swift in Sources */,
 				528C72142BE15AAF0063C289 /* SpotifyData.swift in Sources */,
 				528C72122BE151BE0063C289 /* AudioType.swift in Sources */,
+				528C721A2BE18B1B0063C289 /* SearchSettingsView.swift in Sources */,
 				528C72182BE16B440063C289 /* MessageResponse.swift in Sources */,
 				528C72102BE14EC00063C289 /* Market.swift in Sources */,
 			);
