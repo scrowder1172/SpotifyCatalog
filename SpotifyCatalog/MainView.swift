@@ -24,6 +24,8 @@ struct MainView: View {
         .init(name: "Track", isChecked: false),
     ]
     
+    @FocusState private var searchFieldFocus: Bool
+    
     var body: some View {
         ZStack {
             
@@ -35,6 +37,19 @@ struct MainView: View {
                         .textFieldStyle(.roundedBorder)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.words)
+                        .focused($searchFieldFocus)
+                        .overlay(alignment: .trailing) {
+                            if searchFieldFocus {
+                                Button {
+                                    searchString = ""
+                                    searchFieldFocus = false
+                                } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundStyle(.gray)
+                                }
+                                .offset(x: -5)
+                            }
+                        }
                     Button {
                         Task {
                             await getResults()
@@ -82,7 +97,7 @@ struct MainView: View {
                                                     ProgressView()
                                                 }
                                             }
-                                            Text(item.name ?? "NA")
+                                            Text(item.name)
                                                 .font(.footnote)
                                                 .foregroundStyle(.secondary)
                                         }
@@ -121,7 +136,7 @@ struct MainView: View {
                                                     ProgressView()
                                                 }
                                             }
-                                            Text(item.name ?? "NA")
+                                            Text(item.name)
                                                 .font(.footnote)
                                                 .foregroundStyle(.secondary)
                                         }
@@ -160,7 +175,7 @@ struct MainView: View {
                                                     ProgressView()
                                                 }
                                             }
-                                            Text(item.name ?? "NA")
+                                            Text(item.name)
                                                 .font(.footnote)
                                                 .foregroundStyle(.secondary)
                                         }
