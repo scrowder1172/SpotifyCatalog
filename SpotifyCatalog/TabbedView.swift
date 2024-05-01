@@ -30,203 +30,266 @@ struct TabbedView: View {
     @State private var showDetails: Bool = false
     @State private var isTrackFlipped: Bool = false
     
+    
+    /// Dynamic Scroll Bar Properties
+    @State private var tabs: [TabModel] = [
+        .init(id: TabModel.Tab.artist),
+        .init(id: TabModel.Tab.album),
+        .init(id: TabModel.Tab.track),
+    ]
+    @State private var activeTab: TabModel.Tab = .artist
+    @State private var tabBarScrollState: TabModel.Tab?
+    @State private var mainViewScrollState: TabModel.Tab?
+    @State private var progress: CGFloat = .zero
+    
+    @ViewBuilder
+    func ArtistView() -> some View {
+        if let artistData {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 0) {
+                    ForEach(artistData) { item in
+                        if let imageUrl = item.images?.first?.url {
+                            VStack(spacing: 0) {
+                                AsyncImage(url: URL(string: imageUrl), scale: 1) { phase in
+                                    if let image = phase.image {
+                                        image
+                                            .resizable()
+                                            .frame(width: 300, height: 200)
+                                            .scaledToFit()
+                                    } else if phase.error != nil {
+                                        Image(systemName: "antenna.radiowaves.left.and.right.slash")
+                                            .resizable()
+                                            .frame(width: 200, height: 200)
+                                            .scaledToFit()
+                                    } else {
+                                        ProgressView()
+                                    }
+                                }
+                                Text(item.name)
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .visualEffect { content, proxy in
+                                content
+                                    .rotation3DEffect(.degrees(-proxy.frame(in: .global).minX) / 8, axis: (x: 0, y: 1, z: 0))
+                            }
+                        }
+                    }
+                }
+                .scrollTargetLayout()
+            }
+            .scrollTargetBehavior(.viewAligned)
+        } else {
+            ContentUnavailableView(label: {
+                Label("No Artist Data", systemImage: "person")
+            }, description: {
+                Text("Search for artists to fill this view")
+            }, actions: {
+                Button {
+                    Task {
+                        await getResults()
+                    }
+                } label: {
+                    Text("Search Again")
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(searchString.isEmpty)
+            })
+        }
+    }
+    
+    @ViewBuilder
+    func AlbumsView() -> some View {
+        if let albumData {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 0) {
+                    ForEach(albumData) { item in
+                        if let imageUrl = item.images?.first?.url {
+                            VStack(spacing: 0) {
+                                AsyncImage(url: URL(string: imageUrl), scale: 1) { phase in
+                                    if let image = phase.image {
+                                        image
+                                            .resizable()
+                                            .frame(width: 300, height: 200)
+                                            .scaledToFit()
+                                    } else if phase.error != nil {
+                                        Image(systemName: "antenna.radiowaves.left.and.right.slash")
+                                            .resizable()
+                                            .frame(width: 200, height: 200)
+                                            .scaledToFit()
+                                    } else {
+                                        ProgressView()
+                                    }
+                                }
+                                Text(item.name)
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .visualEffect { content, proxy in
+                                content
+                                    .rotation3DEffect(.degrees(-proxy.frame(in: .global).minX) / 8, axis: (x: 0, y: 1, z: 0))
+                            }
+                        }
+                    }
+                }
+                .scrollTargetLayout()
+            }
+            .scrollTargetBehavior(.viewAligned)
+        } else {
+            ContentUnavailableView(label: {
+                Label("No Album Data", systemImage: "music.note.list")
+            }, description: {
+                Text("Search for albums to fill this view")
+            }, actions: {
+                Button {
+                    Task {
+                        await getResults()
+                    }
+                } label: {
+                    Text("Search Again")
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(searchString.isEmpty)
+            })
+        }
+    }
+    
+    @ViewBuilder
+    func TracksView() -> some View {
+        if let trackData {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 0) {
+                    ForEach(trackData) { item in
+                        VStack(spacing: 0) {
+                            if let imageUrl = item.album?.images?.first?.url {
+                                AsyncImage(url: URL(string: imageUrl), scale: 1) { phase in
+                                    if let image = phase.image {
+                                        
+                                        FlipView(
+                                            front: {image
+                                                .resizable()
+                                                .frame(width: 300, height: 200)
+                                                .scaledToFit()
+                                                .accessibilityAddTraits(.isButton)
+                                                .rotation3DEffect(
+                                                    Angle(degrees: rotationAngle), axis: (x: 0, y: 1, z: 0)
+                                                )
+                                                .onTapGesture {
+                                                    withAnimation(.easeInOut(duration: 0.5)) {
+                                                        rotationAngle += 360
+                                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                                                            withAnimation(.easeInOut) {
+                                                                showDetails.toggle()
+                                                            }
+                                                        }
+                                                    }
+                                                }},
+                                            back: { Color.clear },
+                                            isFlipped: $isTrackFlipped
+                                        )
+                                        .opacity(showDetails && !isTrackFlipped ? 0.5 : 1)
+                                        .onTapGesture {
+                                            toggleFlip(flipState: &isTrackFlipped)
+                                        }
+                                        
+                                    } else if phase.error != nil {
+                                        Image(systemName: "antenna.radiowaves.left.and.right.slash")
+                                            .resizable()
+                                            .frame(width: 300, height: 200)
+                                            .scaledToFit()
+                                    } else {
+                                        ProgressView()
+                                    }
+                                }
+                            } else {
+                                Image(systemName: "antenna.radiowaves.left.and.right.slash")
+                                    .resizable()
+                                    .frame(width: 300, height: 200)
+                                    .scaledToFit()
+                            }
+                            Text(item.name)
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(2)
+                                .truncationMode(.tail)
+                                .frame(maxWidth: 200)
+                        }
+                        .visualEffect { content, proxy in
+                            content
+                                .rotation3DEffect(.degrees(-proxy.frame(in: .global).minX) / 8, axis: (x: 0, y: 1, z: 0))
+                        }
+                    }
+                }
+                .scrollTargetLayout()
+            }
+            .scrollTargetBehavior(.viewAligned)
+        } else {
+            ContentUnavailableView(label: {
+                Label("No Track Data", systemImage: "music.quarternote.3")
+            }, description: {
+                Text("Search for tracks to fill this view")
+            }, actions: {
+                Button {
+                    Task {
+                        await getResults()
+                    }
+                } label: {
+                    Text("Search Again")
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(searchString.isEmpty)
+            })
+        }
+    }
+    
     var body: some View {
         ZStack {
             
             LinearGradient(colors: [.blue.opacity(0.2), .green.opacity(0.3)], startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea()
             VStack(alignment: .leading) {
-                HStack {
-                    TextField("Search", text: $searchString)
-                        .textFieldStyle(.roundedBorder)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.words)
-                        .focused($searchFieldFocus)
-                        .overlay(alignment: .trailing) {
-                            if searchFieldFocus {
-                                Button {
-                                    searchString = ""
-                                    searchFieldFocus = false
-                                } label: {
-                                    Image(systemName: "xmark.circle.fill")
-                                        .foregroundStyle(.gray)
-                                }
-                                .offset(x: -5)
-                            }
-                        }
-                    Button {
-                        Task {
-                            await getResults()
-                        }
-                    } label: {
-                        Image(systemName: "chevron.right.square")
-                            .font(.system(size: 35))
-                            .foregroundStyle(searchString.isEmpty ? .gray.opacity(0.3) : .black.opacity(0.4))
-                    }
-                    .disabled(searchString.isEmpty)
-                    
-                    Button {
-                        showSearchSettings.toggle()
-                    } label: {
-                        Image(systemName: "gear")
-                            .font(.system(size: 30))
-                            .foregroundStyle(.black.opacity(0.4))
-                    }
-                }
-                .padding(.vertical, 40)
+                HeaderView()
                 
-                Spacer()
+                DynamicScrollTabBar()
                 
-                ScrollView{
-                    if let artistData {
-                        Text("Artists")
-                            .font(.largeTitle)
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 0) {
-                                ForEach(artistData) { item in
-                                    if let imageUrl = item.images?.first?.url {
-                                        VStack(spacing: 0) {
-                                            AsyncImage(url: URL(string: imageUrl), scale: 1) { phase in
-                                                if let image = phase.image {
-                                                    image
-                                                        .resizable()
-                                                        .frame(width: 300, height: 200)
-                                                        .scaledToFit()
-                                                } else if phase.error != nil {
-                                                    Image(systemName: "antenna.radiowaves.left.and.right.slash")
-                                                        .resizable()
-                                                        .frame(width: 200, height: 200)
-                                                        .scaledToFit()
-                                                } else {
-                                                    ProgressView()
-                                                }
-                                            }
-                                            Text(item.name)
-                                                .font(.footnote)
-                                                .foregroundStyle(.secondary)
-                                        }
-                                        .visualEffect { content, proxy in
-                                            content
-                                                .rotation3DEffect(.degrees(-proxy.frame(in: .global).minX) / 8, axis: (x: 0, y: 1, z: 0))
-                                        }
-                                    }
+                GeometryReader {
+                    let size = $0.size
+                    
+                    ScrollView(.horizontal) {
+                        LazyHStack(spacing: 0) {
+                            ForEach(tabs) { tab in
+                                switch tab.id {
+                                case .album:
+                                    AlbumsView()
+                                        .frame(width: size.width, height: size.height)
+                                        .contentShape(.rect)
+                                case .artist:
+                                    ArtistView()
+                                        .frame(width: size.width, height: size.height)
+                                        .contentShape(.rect)
+                                case .track:
+                                    TracksView()
+                                        .frame(width: size.width, height: size.height)
+                                        .contentShape(.rect)
                                 }
                             }
-                            .scrollTargetLayout()
                         }
-                        .scrollTargetBehavior(.viewAligned)
+                        .scrollTargetLayout()
+                        .rect { rect in
+                            progress = -rect.minX / size.width
+                        }
                     }
-                    
-                    if let albumData {
-                        Text("Albums")
-                            .font(.largeTitle)
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 0) {
-                                ForEach(albumData) { item in
-                                    if let imageUrl = item.images?.first?.url {
-                                        VStack(spacing: 0) {
-                                            AsyncImage(url: URL(string: imageUrl), scale: 1) { phase in
-                                                if let image = phase.image {
-                                                    image
-                                                        .resizable()
-                                                        .frame(width: 300, height: 200)
-                                                        .scaledToFit()
-                                                } else if phase.error != nil {
-                                                    Image(systemName: "antenna.radiowaves.left.and.right.slash")
-                                                        .resizable()
-                                                        .frame(width: 200, height: 200)
-                                                        .scaledToFit()
-                                                } else {
-                                                    ProgressView()
-                                                }
-                                            }
-                                            Text(item.name)
-                                                .font(.footnote)
-                                                .foregroundStyle(.secondary)
-                                        }
-                                        .visualEffect { content, proxy in
-                                            content
-                                                .rotation3DEffect(.degrees(-proxy.frame(in: .global).minX) / 8, axis: (x: 0, y: 1, z: 0))
-                                        }
-                                    }
-                                }
+                    .scrollPosition(id: $mainViewScrollState)
+                    .scrollIndicators(.hidden)
+                    .scrollTargetBehavior(.paging)
+                    .onChange(of: mainViewScrollState) { oldValue, newValue in
+                        if let newValue {
+                            withAnimation(.snappy) {
+                                tabBarScrollState = newValue
+                                activeTab = newValue
                             }
-                            .scrollTargetLayout()
                         }
-                        .scrollTargetBehavior(.viewAligned)
                     }
-                    
-                    if let trackData {
-                        Text("Tracks")
-                            .font(.largeTitle)
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 0) {
-                                ForEach(trackData) { item in
-                                    VStack(spacing: 0) {
-                                        if let imageUrl = item.album?.images?.first?.url {
-                                            AsyncImage(url: URL(string: imageUrl), scale: 1) { phase in
-                                                if let image = phase.image {
-                                                    
-                                                    FlipView(
-                                                        front: {image
-                                                            .resizable()
-                                                            .frame(width: 300, height: 200)
-                                                            .scaledToFit()
-                                                            .accessibilityAddTraits(.isButton)
-                                                            .rotation3DEffect(
-                                                                Angle(degrees: rotationAngle), axis: (x: 0, y: 1, z: 0)
-                                                            )
-                                                            .onTapGesture {
-                                                                withAnimation(.easeInOut(duration: 0.5)) {
-                                                                    rotationAngle += 360
-                                                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                                                                        withAnimation(.easeInOut) {
-                                                                            showDetails.toggle()
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }},
-                                                        back: { Color.clear },
-                                                        isFlipped: $isTrackFlipped
-                                                    )
-                                                    .opacity(showDetails && !isTrackFlipped ? 0.5 : 1)
-                                                    .onTapGesture {
-                                                        toggleFlip(flipState: &isTrackFlipped)
-                                                    }
-                                                    
-                                                } else if phase.error != nil {
-                                                    Image(systemName: "antenna.radiowaves.left.and.right.slash")
-                                                        .resizable()
-                                                        .frame(width: 300, height: 200)
-                                                        .scaledToFit()
-                                                } else {
-                                                    ProgressView()
-                                                }
-                                            }
-                                        } else {
-                                            Image(systemName: "antenna.radiowaves.left.and.right.slash")
-                                                .resizable()
-                                                .frame(width: 300, height: 200)
-                                                .scaledToFit()
-                                        }
-                                        Text(item.name)
-                                            .font(.footnote)
-                                            .foregroundStyle(.secondary)
-                                            .lineLimit(2)
-                                            .truncationMode(.tail)
-                                            .frame(maxWidth: 200)
-                                    }
-                                    .visualEffect { content, proxy in
-                                        content
-                                            .rotation3DEffect(.degrees(-proxy.frame(in: .global).minX) / 8, axis: (x: 0, y: 1, z: 0))
-                                    }
-                                }
-                            }
-                            .scrollTargetLayout()
-                        }
-                        .scrollTargetBehavior(.viewAligned)
-                    }
-                    
                 }
             }
             .sheet(isPresented: $showSearchSettings) {
@@ -327,10 +390,169 @@ struct TabbedView: View {
             print("JSON String: \(string)")
         }
     }
+    
+    @ViewBuilder
+    func HeaderView() -> some View {
+        HStack {
+            TextField("Search", text: $searchString)
+                .textFieldStyle(.roundedBorder)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.words)
+                .focused($searchFieldFocus)
+                .overlay(alignment: .trailing) {
+                    if searchFieldFocus {
+                        Button {
+                            searchString = ""
+                            searchFieldFocus = false
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(.gray)
+                        }
+                        .offset(x: -5)
+                    }
+                }
+            Button {
+                Task {
+                    await getResults()
+                }
+            } label: {
+                Image(systemName: "chevron.right.square")
+                    .font(.system(size: 35))
+                    .foregroundStyle(searchString.isEmpty ? .gray.opacity(0.3) : .black.opacity(0.4))
+            }
+            .disabled(searchString.isEmpty)
+            
+            Button {
+                showSearchSettings.toggle()
+            } label: {
+                Image(systemName: "gear")
+                    .font(.system(size: 30))
+                    .foregroundStyle(.black.opacity(0.4))
+            }
+        }
+        .padding(.vertical, 40)
+    }
+    
+    @ViewBuilder
+    func DynamicScrollTabBar() -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 20) {
+                ForEach($tabs) { $tab in
+                    Button {
+                        withAnimation(.snappy) {
+                            activeTab = tab.id
+                            tabBarScrollState = tab.id
+                            mainViewScrollState = tab.id
+                        }
+                    } label: {
+                        Text(tab.id.rawValue)
+                            .font(.title)
+                            .fontWeight(.medium)
+                            .padding(.vertical, 10)
+                            .foregroundStyle(activeTab == tab.id ? Color.primary : .gray)
+                            .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .rect { rect in
+                        tab.size = rect.size
+                        tab.minX = rect.minX
+                    }
+                }
+            }
+            .scrollTargetLayout()
+        }
+        .scrollPosition(id: .init(get: {
+            return tabBarScrollState
+        }, set: { _ in
+        }), anchor: .center)
+        .overlay(alignment: .bottom) {
+            ZStack(alignment: .leading) {
+                Rectangle()
+                    .fill(.gray.opacity(0.3))
+                    .frame(height: 1)
+                    .padding(.horizontal, -15)
+                
+                let inputRange = tabs.indices.compactMap { return CGFloat($0) }
+                let ouputRange = tabs.compactMap { return $0.size.width }
+                let outputPositionRange = tabs.compactMap { return $0.minX }
+                let indicatorWidth = progress.interpolate(inputRange: inputRange, outputRange: ouputRange)
+                let indicatorPosition = progress.interpolate(inputRange: inputRange, outputRange: outputPositionRange)
+                
+                Rectangle()
+                    .fill(.primary)
+                    .frame(width: indicatorWidth, height: 1.5)
+                    .offset(x: indicatorPosition)
+            }
+        }
+        .safeAreaPadding(.horizontal, 15)
+        .scrollIndicators(.hidden)
+    }
+}
+
+extension CGFloat {
+    func interpolate(inputRange: [CGFloat], outputRange: [CGFloat]) -> CGFloat {
+        /// If Value less than it's Initial Input Range
+        let x = self
+        let length = inputRange.count - 1
+        if x <= inputRange[0] { return outputRange[0] }
+        
+        for index in 1...length {
+            let x1 = inputRange[index - 1]
+            let x2 = inputRange[index]
+            
+            let y1 = outputRange[index - 1]
+            let y2 = outputRange[index]
+            
+            /// Linear Interpolation Formula: y1 + ((y2-y1) / (x2-x1)) * (x-x1)
+            if x <= inputRange[index] {
+                let y = y1 + ((y2-y1) / (x2-x1)) * (x-x1)
+                return y
+            }
+        }
+        
+        /// If Value Exceeds it's Maximum Input Range
+        return outputRange[length]
+    }
+}
+
+
+struct TabModel: Identifiable {
+    enum Tab: String, CaseIterable {
+        case artist = "Artists"
+        case album = "Albums"
+        case track = "Tracks"
+    }
+    
+    private(set) var id: Tab
+    var size: CGSize = .zero
+    var minX: CGFloat = .zero
+}
+
+struct RectKey: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        value = nextValue()
+    }
+}
+
+extension View {
+    @ViewBuilder
+    func rect(completion: @escaping (CGRect) -> ()) -> some View {
+        self
+            .overlay {
+                GeometryReader {
+                    let rect = $0.frame(in: .scrollView(axis: .horizontal))
+                    
+                    Color.clear
+                        .preference(key: RectKey.self, value: rect)
+                        .onPreferenceChange(RectKey.self, perform: completion)
+                }
+            }
+    }
 }
 
 #Preview {
-    MainView()
+    TabbedView()
 }
 
 struct FlipView<Front: View, Back: View>: View {
