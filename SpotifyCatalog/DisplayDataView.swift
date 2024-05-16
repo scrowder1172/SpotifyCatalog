@@ -44,7 +44,7 @@ struct DisplayDataView<T: SpotifyData>: View {
 }
 
 #Preview {
-    var artist: Artist = .init(id: "1", name: "Random Data")
+    let artist: Artist = .init(id: "1", name: "Random Data")
     return ScrollView(.horizontal, showsIndicators: false){
         DisplayDataView(spotifyItem: artist)
     }
