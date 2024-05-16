@@ -51,9 +51,7 @@ struct MainView: View {
                             }
                         }
                     Button {
-                        Task {
-                            await getResults()
-                        }
+                        getResults()
                     } label: {
                         Image(systemName: "chevron.right.square")
                             .font(.system(size: 35))
@@ -64,14 +62,12 @@ struct MainView: View {
                     Button {
                         showSearchSettings.toggle()
                     } label: {
-                        Image(systemName: "gear")
+                        Image(systemName: "line.3.horizontal.decrease.circle")
                             .font(.system(size: 30))
                             .foregroundStyle(.black.opacity(0.4))
                     }
                 }
                 .padding(.vertical, 40)
-                
-                Spacer()
                 
                 ScrollView{
                     if let artistData {
@@ -79,33 +75,8 @@ struct MainView: View {
                             .font(.largeTitle)
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 0) {
-                                ForEach(artistData) { item in
-                                    if let imageUrl = item.images?.first?.url {
-                                        VStack(spacing: 0) {
-                                            AsyncImage(url: URL(string: imageUrl), scale: 1) { phase in
-                                                if let image = phase.image {
-                                                    image
-                                                        .resizable()
-                                                        .frame(width: 300, height: 200)
-                                                        .scaledToFit()
-                                                } else if phase.error != nil {
-                                                    Image(systemName: "antenna.radiowaves.left.and.right.slash")
-                                                        .resizable()
-                                                        .frame(width: 200, height: 200)
-                                                        .scaledToFit()
-                                                } else {
-                                                    ProgressView()
-                                                }
-                                            }
-                                            Text(item.name)
-                                                .font(.footnote)
-                                                .foregroundStyle(.secondary)
-                                        }
-                                        .visualEffect { content, proxy in
-                                            content
-                                                .rotation3DEffect(.degrees(-proxy.frame(in: .global).minX) / 8, axis: (x: 0, y: 1, z: 0))
-                                        }
-                                    }
+                                ForEach(artistData) { artist in
+                                    DisplayDataView(spotifyItem: artist)
                                 }
                             }
                             .scrollTargetLayout()
@@ -118,33 +89,8 @@ struct MainView: View {
                             .font(.largeTitle)
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 0) {
-                                ForEach(albumData) { item in
-                                    if let imageUrl = item.images?.first?.url {
-                                        VStack(spacing: 0) {
-                                            AsyncImage(url: URL(string: imageUrl), scale: 1) { phase in
-                                                if let image = phase.image {
-                                                    image
-                                                        .resizable()
-                                                        .frame(width: 300, height: 200)
-                                                        .scaledToFit()
-                                                } else if phase.error != nil {
-                                                    Image(systemName: "antenna.radiowaves.left.and.right.slash")
-                                                        .resizable()
-                                                        .frame(width: 200, height: 200)
-                                                        .scaledToFit()
-                                                } else {
-                                                    ProgressView()
-                                                }
-                                            }
-                                            Text(item.name)
-                                                .font(.footnote)
-                                                .foregroundStyle(.secondary)
-                                        }
-                                        .visualEffect { content, proxy in
-                                            content
-                                                .rotation3DEffect(.degrees(-proxy.frame(in: .global).minX) / 8, axis: (x: 0, y: 1, z: 0))
-                                        }
-                                    }
+                                ForEach(albumData) { album in
+                                    DisplayDataView(spotifyItem: album)
                                 }
                             }
                             .scrollTargetLayout()
@@ -162,15 +108,9 @@ struct MainView: View {
                                         VStack(spacing: 0) {
                                             AsyncImage(url: URL(string: imageUrl), scale: 1) { phase in
                                                 if let image = phase.image {
-                                                    image
-                                                        .resizable()
-                                                        .frame(width: 300, height: 200)
-                                                        .scaledToFit()
+                                                    SearchResultsImageView(image: image)
                                                 } else if phase.error != nil {
-                                                    Image(systemName: "antenna.radiowaves.left.and.right.slash")
-                                                        .resizable()
-                                                        .frame(width: 200, height: 200)
-                                                        .scaledToFit()
+                                                    SearchResultsImageView(image: Image(systemName: "antenna.radiowaves.left.and.right.slash"))
                                                 } else {
                                                     ProgressView()
                                                 }
@@ -179,9 +119,13 @@ struct MainView: View {
                                                 .font(.footnote)
                                                 .foregroundStyle(.secondary)
                                         }
-                                        .visualEffect { content, proxy in
+                                        .containerRelativeFrame(.horizontal, count: 1, spacing: 10)
+                                        .scrollTransition { content, phase in
                                             content
-                                                .rotation3DEffect(.degrees(-proxy.frame(in: .global).minX) / 8, axis: (x: 0, y: 1, z: 0))
+                                                .opacity(phase.isIdentity ? 1.0 : 0.0)
+                                                .scaleEffect(x: phase.isIdentity ? 1.0 : 0.3,
+                                                             y: phase.isIdentity ? 1.0 : 0.3)
+                                                .offset(y: phase.isIdentity ? 0 : 50)
                                         }
                                     }
                                 }
@@ -212,46 +156,48 @@ struct MainView: View {
         }
     }
     
-    func getResults() async {
+    func getResults() {
         isSearchRunning = true
-        let urlString: String = "http://192.168.0.32:5000/api/spotify/search"
-        guard let url = URL(string: urlString) else {
+        Task {
+            let urlString: String = "https://crowdercode.com/api/spotify/search"
+            guard let url = URL(string: urlString) else {
+                isSearchRunning = false
+                return
+            }
+            
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+            
+            let spotifySearchBody = SpotifySearchBody(query: searchString, market: selectedMarket, type: searchTypes.filter { $0.isChecked }.map { $0.spotifyType })
+            
+            do {
+                request.httpBody = try JSONEncoder().encode(spotifySearchBody)
+                
+                let (data, response) = try await URLSession.shared.data(for: request)
+                
+                guard let response = response as? HTTPURLResponse else {
+                    isSearchRunning = false
+                    return
+                }
+                
+                guard response.statusCode == 200 else {
+                    print("Status code: \(response.statusCode)")
+                    isSearchRunning = false
+                    return
+                }
+                
+                let decodedData = try JSONDecoder().decode(MessageResponse.self, from: data)
+                artistData = decodedData.data.artists?.items
+                albumData = decodedData.data.albums?.items
+                trackData = decodedData.data.tracks?.items
+                
+            } catch {
+                print("Error: \(error.localizedDescription)")
+            }
+            
             isSearchRunning = false
-            return
         }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        let spotifySearchBody = SpotifySearchBody(query: searchString, market: selectedMarket, type: searchTypes.filter { $0.isChecked }.map { $0.spotifyType })
-        
-        do {
-            request.httpBody = try JSONEncoder().encode(spotifySearchBody)
-            
-            let (data, response) = try await URLSession.shared.data(for: request)
-            
-            guard let response = response as? HTTPURLResponse else {
-                isSearchRunning = false
-                return
-            }
-            
-            guard response.statusCode == 200 else {
-                print("Status code: \(response.statusCode)")
-                isSearchRunning = false
-                return
-            }
-            
-            let decodedData = try JSONDecoder().decode(MessageResponse.self, from: data)
-            artistData = decodedData.data.artists?.items
-            albumData = decodedData.data.albums?.items
-            trackData = decodedData.data.tracks?.items
-            
-        } catch {
-            print("Error: \(error.localizedDescription)")
-        }
-        
-        isSearchRunning = false
     }
     
     func decodeUnknownData(data: Data, encoding: String.Encoding = .utf8) {
@@ -264,3 +210,6 @@ struct MainView: View {
 #Preview {
     MainView()
 }
+
+
+
