@@ -7,6 +7,11 @@
 
 import Foundation
 
+protocol SpotifyData {
+    var name: String { get set }
+    var images: [SpotifyImage]? { get set }
+}
+
 struct ArtistMeta: Codable {
     var href: String
     var items: [Artist]
@@ -17,7 +22,7 @@ struct ArtistMeta: Codable {
     var total: Int
 }
 
-struct Artist: Codable, Identifiable {
+struct Artist: SpotifyData, Codable, Identifiable {
     enum CodingKeys: String, CodingKey {
         case externalUrls = "external_urls"
         case followers
@@ -53,7 +58,7 @@ struct AlbumMeta: Codable {
     var items: [Album]
 }
 
-struct Album: Codable, Identifiable {
+struct Album: SpotifyData, Codable, Identifiable {
     enum CodingKeys: String, CodingKey {
         case albumType = "album_type"
         case artists
